@@ -36,7 +36,7 @@ def softmax_loss_naive(W, X, y, reg):
         f_i = X[i, :].dot(W)  # 1xC
 
         # Normalization trick to avoid numerical instability, per http://cs231n.github.io/linear-classify/#softmax
-        f_i -=  np.max(f_i)
+        f_i -= np.max(f_i)
 
         sum_i = 0
         for j in range(num_classes):
@@ -97,17 +97,19 @@ def softmax_loss_vectorized(W, X, y, reg):
     loss /= num_train
     loss += 0.5 * reg * np.sum(W * W)
 
-    p = np.exp(scores) / (sums[:, np.newaxis])
-    ind = np.zeros(p.shape)
-    ind[np.arange(num_train), y] = 1
+    scores_norm = np.exp(scores) / (sums[:, np.newaxis])
 
+    # My understanding: scores_norm are [0,1]. So subtracting 1 to the correct classes makes it neg
+    # A grad step is self.W -= learning_rate * grad
+    # During the the training update:
+    #  - Neg values will reinforce the weights (minus * minus)
+    #  - Pos values will penalize the weights (minus * plus)
+    scores_norm[np.arange(num_train), y] -= 1
 
-
-    dW = X.T.dot(p-ind)
+    dW = X.T.dot(scores_norm)
 
     dW /= num_train
     dW += reg * W
-
 
     #############################################################################
     #                          END OF YOUR CODE                                 #
